@@ -1,12 +1,32 @@
 import time
 from socket import * # socket, gethostbyname, AF_INET, SOCK_DGRAM, gethostname
 import sys
+import threading
 
 import win32api
 import win32con
 import win32com
 
+
+PORT_NUMBER = 0
+CommandCenterPortBcast = 5002
+SIZE = 1024
 volume = 100
+
+class IdSpam(threading.Thread):
+    def __init__(self,port):
+        threading.Thread.__init__(self)
+        self.port = int(port)
+        self.cs = socket(AF_INET, SOCK_DGRAM)
+        self.cs.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+        self.cs.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
+        self.cs.bind((hostName,CommandCenterPortBcast))
+    def run(self):
+        while True:
+            self.cs.sendto(bytes(str(self.port),'utf-8'), ('255.255.255.255', CommandCenterPortBcast))
+            time.sleep(5)
+
+
 
 def keyPress(key) :
     win32api.keybd_event(key, 0,0,0)
@@ -44,24 +64,12 @@ def processCmd(inputBuff):
         j = j + 1
     print('FINISHED, Executed {0} commands.'.format(CmdCount))
 
-
-
-PORT_NUMBER = 5000
-CommandCenterPortBcast = 5001
-SIZE = 1024
-
 hostName = gethostname()
-
 mySocket = socket( AF_INET, SOCK_DGRAM )
 mySocket.bind( (hostName, PORT_NUMBER) )
-
-print ("Server listening on host:{1}\n IP:{2}\n Port {0}\n".format(PORT_NUMBER,hostName,gethostbyname(hostName)))
-cs = socket(AF_INET, SOCK_DGRAM)
-cs.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-cs.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
-cs.bind((hostName,CommandCenterPortBcast))
-time.sleep(1) 
-cs.sendto(b'This is a test', ('192.168.1.255', CommandCenterPortBcast))
+spam = IdSpam(mySocket.getsockname()[1])
+spam.start()
+print ("Server listening on host:{1}\n IP:{2}\n Port {0}\n".format(mySocket.getsockname()[1],hostName,gethostbyname(hostName)))
 
 while True:
         data = 0;
