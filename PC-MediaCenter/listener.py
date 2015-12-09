@@ -3,15 +3,17 @@ from socket import * # socket, gethostbyname, AF_INET, SOCK_DGRAM, gethostname
 import sys
 import threading
 
+import winVolume
+
 import win32api
 import win32con
 import win32com
 
 
-PORT_NUMBER = 0
+PORT_NUMBER = 5001
 CommandCenterPortBcast = 5002
 SIZE = 1024
-volume = 100
+volume = winVolume.GetVolumeControl()
 
 class IdSpam(threading.Thread):
     def __init__(self,port):
@@ -27,11 +29,11 @@ class IdSpam(threading.Thread):
             time.sleep(5)
 
 
-
 def keyPress(key) :
     win32api.keybd_event(key, 0,0,0)
     time.sleep(.0001)
     win32api.keybd_event(key, 0,win32con.KEYEVENTF_KEYUP,0)
+
 
 def processCmd(inputBuff):
     global volume
@@ -50,17 +52,11 @@ def processCmd(inputBuff):
         elif i == 'm' :
              keyPress(win32con.VK_VOLUME_MUTE)
         elif i == 'v' :
-            diff = volume - ord(inputBuff[j+1])
+            newVol = ord(inputBuff[j+1])
+            if(newVol >= 0 or newVol <= 100) :
+                print('Going from volume: {0} to {1}'.format(int(volume.GetMasterVolumeLevelScalar()*100),newVol))
+                volume.SetMasterVolumeLevelScalar(newVol/100,None)
             j = j+1
-            volume = volume - diff
-            while diff > 1 :
-                keyPress(win32con.VK_VOLUME_DOWN)
-                diff = diff - 2;
-            while diff < -1 :
-                keyPress(win32con.VK_VOLUME_UP)
-                diff = diff + 2;
-            volume = volume + diff
-            print('Expected volue: {0}'.format(volume))
         j = j + 1
     print('FINISHED, Executed {0} commands.'.format(CmdCount))
 

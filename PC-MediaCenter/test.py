@@ -10,8 +10,7 @@ while True:
 import socket
 
 SERVER = '192.168.1.115'#socket.gethostname()
-PORT = 50541
-
+PORT = 64448
 #print([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2]][:1])
 
 

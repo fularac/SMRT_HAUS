@@ -1,1 +1,1 @@
-python listener.py
+START /B python listener.py
