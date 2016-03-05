@@ -25,6 +25,7 @@ class IdSpam(threading.Thread):
 
 
 def processCmd(inputBuff):
+    print('Command Recieved:'+time.strftime("%a, %d, %b %Y %H:%M:%S",time.gmtime()))
     global volume
     j = 0
     CmdCount = 0
