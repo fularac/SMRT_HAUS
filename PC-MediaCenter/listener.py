@@ -41,6 +41,21 @@ def keyPress(key,shift=False) :
     if shift:
         win32api.keybd_event(win32con.VK_SHIFT, 0,win32con.KEYEVENTF_KEYUP,0)
 
+def MouseEVT(evt):
+    if evt is 'ru':
+        win32api.mouse_event(win32con.MOUSEEVENTF_RIGHTUP,0,0)
+    elif evt is 'rd':
+        win32api.mouse_event(win32con.MOUSEEVENTF_RIGHTDOWN,0,0)
+    elif evt is 'rc':
+        MouseRightClick()
+    elif evt is 'lu':
+        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP,0,0)
+    elif evt is 'ld':
+        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN,0,0)
+    elif evt is 'lc':
+        MouseLeftClick() 
+
+
 def MouseRightClick() :
     win32api.mouse_event(win32con.MOUSEEVENTF_RIGHTDOWN,0,0)
     time.sleep(.0001)
@@ -63,23 +78,29 @@ def processCmd(inputBuff):
     CmdCount = 0
     while j < len(inputBuff) :
         CmdCount = CmdCount+1
-        i = inputBuff[j]
+        i = chr(inputBuff[j])
+        print(i)
         print('Command: {0}, buff index: {1}'.format(inputBuff[j],j))
-        if   i == b'p'[0] :
+        if   i == '\\':
+            cmd = inputBuff[j:].split(b'\\')[1]
+            print(cmd)
+            j += len(cmd) + 1
+            #SendMedia()
+        if   i == 'p' :
              keyPress(win32con.VK_MEDIA_PLAY_PAUSE)
-        elif i == b'n'[0] :
+        elif i == 'n' :
              keyPress(win32con.VK_MEDIA_NEXT_TRACK) 
-        elif i == b'b'[0] :
+        elif i == 'b' :
              keyPress(win32con.VK_MEDIA_PREV_TRACK)
-        elif i == b'm'[0] :
+        elif i == 'm' :
              keyPress(win32con.VK_VOLUME_MUTE)
-        elif i == b'v'[0] and len(inputBuff) > j+1:
+        elif i == 'v' and len(inputBuff) > j+1:
             newVol = inputBuff[j+1]
             if(newVol >= 0 or newVol <= 100) :
                 #print('Going from volume: {0} to {1}'.format(int(volume.GetMasterVolumeLevelScalar()*100),newVol))
                 volume.SetMasterVolumeLevelScalar(newVol/100,None)
             j = j+1
-        elif i == b't'[0] and len(inputBuff) > j+4:
+        elif i == 't' and len(inputBuff) > j+4:
             x  = inputBuff[j+1]
             y  = inputBuff[j+2]
             if x > 127 :
@@ -89,22 +110,30 @@ def processCmd(inputBuff):
             #print(str(x)+' '+str(y))
             moveMouse(x,y)
             j += 2
-        elif i == b'l'[0]:
+        elif (i == 'l' or i == 'r') and                           \
+                len(inputBuff) > j+1 and                                  \
+                (inputBuff[j+1] == ord('u') or inputBuff[j+1] == ord('d')):
+            MouseEv(chr(i)+chr(inputBuff[j+1]))
+            j = j + 1
+        elif i == 'l':
             MouseLeftClick()
-        elif i == b'r'[0]:
+        elif i == 'r':
             MouseRightClick()            
-        elif i == b'k'[0] and len(inputBuff) > j+1:
+        elif i == 'k' and len(inputBuff) > j+1:
             print(inputBuff[j+1:])
             for k in range(j+2,j+2+inputBuff[j+1]) :
                 c = chr(inputBuff[k])
                 shift = False
                 if c.isnumeric() :
                     c = 0x30 + int(c)
-                elif c.isupper() :
-                    shift = True
-                    c = 0x41 + ord(c.lower()) - ord('a'[0])
-                else :
-                    c = 0x41 + ord(c)-ord('a')
+                elif c.isalpha():
+                    if c.isupper() :
+                        shift = True
+                        c = 0x41 + ord(c.lower()) - ord('a'[0])
+                    else :
+                        c = 0x41 + ord(c)-ord('a')
+                elif c is ' ' :
+                    c = win32con.VK_SPACE
                 keyPress(c,shift)
                 j += 1
             j += 1
@@ -130,5 +159,8 @@ while True:
         except BlockingIOError:
                 pass #cmds = cmds
         mySocket.setblocking(1);
-        processCmd(cmds)
+        try:
+            processCmd(cmds)
+        except Exception as e:
+            print('Error has occured',str(e))
 sys.exit()
